@@ -3,7 +3,7 @@ const cors = require('cors');
 const app = express();
 require('dotenv').config();
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 app.use(cors());
 app.use(express.json());
@@ -33,9 +33,22 @@ async function run() {
 
         // food apis
         const foodCollections = client.db('foodShare').collection('foods')
+        const requestedCollection = client.db('foodShare').collection('requested')
 
         app.get('/foods', async (req, res) => {
-            const cursor = foodCollections.find();
+            const filter = { status: "available" };
+
+
+            const { search } = req.query
+
+            // Include filter if there is any search parameter
+            if (search) {
+                filter.name = { $regex: search, $options: 'i' }
+            }
+
+            // filter = { name: { $regex: search, $options: 'i' } }
+
+            const cursor = foodCollections.find(filter);
             const result = await cursor.toArray();
             res.send(result);
         })
@@ -44,6 +57,45 @@ async function run() {
             const newFood = req.body;
             const result = await foodCollections.insertOne(newFood)
             res.send(result)
+        })
+
+        app.put('/foods/:id', async (req, res) => {
+            const { id } = req.params;
+            const filter = { _id: new ObjectId(id) }
+            const update = {
+                $set: {
+                    status: 'requested'
+                }
+            }
+            const result = await foodCollections.updateOne(filter, update, { upsert: true })
+            const requestedFood = { food: new ObjectId(id), ...req.body }
+            const result2 = await requestedCollection.insertOne(requestedFood)
+            if (result.modifiedCount > 0 && result2.insertedId) {
+                return res.send(result2)
+            }
+            res.send({
+                success: false,
+                message: "something went wrong"
+            })
+        })
+
+        app.get('/requested/:email', async (req, res) => {
+            const { email } = req.params;
+            const requestedFoods = await requestedCollection.find({ userEmail: email }).toArray();
+            const foodIds = requestedFoods.map(requested => requested.food);
+            const foods = await foodCollections.find({
+                _id: { $in: foodIds }
+            }).toArray();
+            const mergedData = requestedFoods.map(requested => {
+                const foodDetail = foods.find(food => food._id.equals(requested.food)) || null;
+                return {
+                    ...foodDetail,
+                    ...requested
+                };
+            });
+
+            res.send(mergedData);
+
         })
 
 
@@ -61,5 +113,5 @@ app.get("/", (req, res) => {
 
 app.listen(port, () => {
     console.log(`Food is waiting at: ${port}`);
-    
+
 })
