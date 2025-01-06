@@ -36,6 +36,7 @@ async function run() {
         const requestedCollection = client.db('foodShare').collection('requested')
 
         app.get('/foods', async (req, res) => {
+
             const filter = { status: "available" };
 
 
@@ -48,7 +49,7 @@ async function run() {
 
             // filter = { name: { $regex: search, $options: 'i' } }
 
-            const cursor = foodCollections.find(filter);
+            const cursor = foodCollections.find(filter).sort({ expireDate: -1 });
             const result = await cursor.toArray();
             res.send(result);
         })
@@ -103,6 +104,7 @@ async function run() {
             const result = await cursor.toArray()
             res.send(result)
         })
+
 
 
     } finally {
