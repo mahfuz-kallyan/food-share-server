@@ -98,6 +98,12 @@ async function run() {
 
         })
 
+        app.get('/featured', async (req, res) => {
+            const cursor = foodCollections.find().sort({ quantity: -1 }).limit(6);
+            const result = await cursor.toArray()
+            res.send(result)
+        })
+
 
     } finally {
         // Ensures that the client will close when you finish/error
