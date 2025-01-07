@@ -109,11 +109,23 @@ async function run() {
 
             const { email } = req.params;
 
-            const cursor = foodCollections.find({email})
+            const cursor = foodCollections.find({ email })
             const result = await cursor.toArray();
             res.send(result);
         })
 
+        app.patch('/manage-foods/:id', async (req, res) => {
+            const id = req.params.id
+            const data = req.body
+            const filter = { _id: new ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    status: data.status
+                }
+            }
+            const result = await foodCollections.updateOne(filter, updatedDoc);
+            res.send(result)
+        })
 
 
     } finally {
