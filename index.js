@@ -105,6 +105,15 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/manage-foods/:email', async (req, res) => {
+
+            const { email } = req.params;
+
+            const cursor = foodCollections.find({email})
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
 
 
     } finally {
