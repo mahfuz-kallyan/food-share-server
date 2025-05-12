@@ -26,9 +26,9 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
         // food apis
@@ -100,7 +100,7 @@ async function run() {
         })
 
         app.get('/featured', async (req, res) => {
-            const cursor = foodCollections.find().sort({ quantity: -1 }).limit(6);
+            const cursor = foodCollections.find().sort({ quantity: 1 }).limit(6);
             const result = await cursor.toArray()
             res.send(result)
         })
@@ -124,6 +124,15 @@ async function run() {
                 }
             }
             const result = await foodCollections.updateOne(filter, updatedDoc);
+            res.send(result)
+        })
+
+        app.delete('/manage-foods/:id', async (req, res) => {
+            const id = req.params;
+            const query = {
+                _id : new ObjectId(id)
+            }
+            const result = await foodCollections.deleteOne(query)
             res.send(result)
         })
 
